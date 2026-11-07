@@ -13,7 +13,7 @@ export const GET = api(async (request: Request) => {
  ...(q.authorId ? { authorId: q.authorId } : {}),
  };
  const [data, total] = await prisma.$transaction([
- prisma.book.findMany({ where, include: { author: true }, skip: (q.page - 1) * q.limit, take: q.limit, orderBy: [{ [q.sortBy]: { sort: q.order, nulls: 'last' } }, { id: 'asc' }] }),
+ prisma.book.findMany({ where, include: { author: true }, skip: (q.page - 1) * q.limit, take: q.limit, orderBy: [q.sortBy === 'publishedYear' ? { publishedYear: { sort: q.order, nulls: 'last' } } : { [q.sortBy]: q.order }, { id: 'asc' }] }),
  prisma.book.count({ where }),
  ], { isolationLevel: 'RepeatableRead' });
  const totalPages = Math.ceil(total / q.limit);
