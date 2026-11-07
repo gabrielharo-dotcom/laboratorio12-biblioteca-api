@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Folio · Biblioteca
+Laboratorio 12 de Desarrollo de Aplicaciones Web Avanzado. Next.js App Router, TypeScript, Prisma 7 y PostgreSQL en Supabase.
 
-## Getting Started
+- Web: https://folio-biblioteca-lab12.vercel.app
+- Repositorio: https://github.com/gabrielharo-dotcom/laboratorio12-biblioteca-api
 
-First, run the development server:
+## Ejecutar en Windows
+1. Abrir una terminal en esta carpeta.
+2. Ejecutar `npm install`.
+3. Copiar `.env.example` a `.env` y completar DATABASE_URL con la conexión Session pooler de Supabase.
+4. Ejecutar `npm run db:push` para crear las tablas y `npm run db:seed` para cargar 3 autores y 13 libros.
+5. Ejecutar `npm run dev` y abrir http://localhost:3000.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+La contraseña debe codificarse para una URL. El .env está excluido de Git. El certificado CA oficial de Supabase está en certs/ y se utiliza para verificar TLS. No se necesitan claves públicas ni service_role.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rutas
+| Ruta | Métodos | Función |
+| --- | --- | --- |
+| /api/authors | GET, POST | Listar y crear autores |
+| /api/authors/[id] | GET, PUT, DELETE | Consultar, actualizar y eliminar autor |
+| /api/authors/[id]/books | GET | Obtener libros del autor |
+| /api/authors/[id]/stats | GET | Total, años, promedio, géneros y extremos |
+| /api/books | GET, POST | Listar, filtrar y crear libros |
+| /api/books/[id] | GET, PUT, DELETE | Consultar, actualizar y eliminar libro |
+| /api/books/search | GET | Búsqueda combinada, ordenamiento y paginación |
+| /api/catalog | GET | Autores, géneros disponibles y total de libros |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+La búsqueda acepta search, genre, authorName, page (1), limit (10, máximo 50), sortBy (title, publishedYear, createdAt) y order (asc, desc). Se añade authorId para el selector exacto de la interfaz. Los parámetros inválidos devuelven HTTP 400. Eliminar un autor elimina sus libros por la relación Cascade indicada en la guía.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Las estadísticas omiten los valores nulos al calcular años y páginas. Si el autor no tiene valores disponibles, se devuelve null; los géneros se devuelven sin duplicados.
 
-## Learn More
+## Pantallas
+- /: dashboard con totales y CRUD de autores.
+- /books: CRUD de libros, búsqueda con debounce, filtros, ordenamiento y navegación de páginas.
+- /authors/[id]: información completa, estadísticas, obras y formularios de edición y nuevo libro.
 
-To learn more about Next.js, take a look at the following resources:
+## Verificación
+- `npm run lint`
+- `npm run build`
+- Importar `postman/Biblioteca-Lab12.postman_collection.json` en Postman y ejecutar en orden.
+- También: `npx newman run postman/Biblioteca-Lab12.postman_collection.json`.
+- Cambiar la variable de colección baseUrl para probar Vercel.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Se ejecutaron 33 pruebas de integración y la colección Postman mediante Newman (13 solicitudes, 15 aserciones). Los resultados completos están en la carpeta evidencias contigua al proyecto.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Despliegue
+Importar el repositorio en Vercel como Next.js y configurar DATABASE_URL como variable sensible de Production y Preview. El build genera Prisma Client automáticamente y el certificado se incluye mediante outputFileTracingIncludes.
 
-## Deploy on Vercel
+## Referencias
+- Guía de laboratorio GLAB-S12-EAREVALO-2026-1.
+- https://nextjs.org/docs/app/getting-started/route-handlers
+- https://www.prisma.io/docs/guides/v7/frameworks/nextjs
+- https://supabase.com/docs/guides/database/connecting-to-postgres
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
