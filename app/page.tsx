@@ -1,69 +1,18 @@
-import Image from "next/image";
-
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+'use client';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import { AuthorForm, Modal } from '@/components/forms';
+import { request, type Author } from '@/lib/types';
+export default function Dashboard() {
+ const [authors,setAuthors]=useState<Author[]>([]),[books,setBooks]=useState(0),[genres,setGenres]=useState<string[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[editing,setEditing]=useState<Author|null|undefined>(undefined);
+ const load=useCallback(async()=>{try{const d=await request<{authors:Author[];totalBooks:number;genres:string[]}>('/api/catalog');setAuthors(d.authors);setBooks(d.totalBooks);setGenres(d.genres);setError('');}catch(e){setError((e as Error).message);}finally{setLoading(false);}},[]);
+ useEffect(()=>{const timer=setTimeout(()=>void load(),0);return()=>clearTimeout(timer);},[load]);
+ return <><div className="eyebrow">TU BIBLIOTECA, CONECTADA</div><div className="page-head"><div><h1>Historias que conectan.</h1><p>Un lugar para descubrir autores y organizar sus obras.</p></div><button onClick={()=>setEditing(null)}>＋ Nuevo autor</button></div>
+ <div className="stats"><article><span>Autores registrados</span><strong>{authors.length.toString().padStart(2,'0')}</strong><small>Voces de nuestra colección</small></article><article><span>Libros en el catálogo</span><strong>{books.toString().padStart(2,'0')}</strong><small>Historias por descubrir</small></article><article><span>Géneros literarios</span><strong>{genres.length.toString().padStart(2,'0')}</strong><small>Distintas formas de leer</small></article></div>
+ <div className="section-head"><div><h2>Nuestros autores</h2><p>Explora su vida, sus libros y su huella literaria.</p></div><Link className="text-link" href="/books">Explorar catálogo →</Link></div>
+ {error&&<p role="alert" className="error">{error} <button className="secondary" onClick={load}>Reintentar</button></p>}
+ {loading?<p role="status">Cargando autores…</p>:authors.length?<div className="author-grid">{authors.map((a,i)=><article className="author-card" key={a.id}><div className={'avatar color-'+i%4}>{a.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</div><div className="muted uppercase">{a.nationality||'Nacionalidad sin registrar'}</div><h3>{a.name}</h3><p className="bio">{a.bio||'Aún no se ha registrado una biografía.'}</p><div className="card-foot"><span>{a._count?.books??0} libros</span><span>{a.birthYear||'—'}</span></div><Link className="text-link" href={'/authors/'+a.id}>Ver autor y sus libros →</Link><div className="actions"><button className="secondary" onClick={()=>setEditing(a)}>Editar</button><button className="danger" onClick={async()=>{if(!confirm('¿Eliminar a '+a.name+' y todos sus libros?'))return;try{await request('/api/authors/'+a.id,{method:'DELETE'});await load();}catch(e){setError((e as Error).message);}}}>Eliminar</button></div></article>)}</div>:!error&&<div className="empty"><h3>Una biblioteca empieza con un autor.</h3><p>Agrega el primero para comenzar tu colección.</p></div>}
+ {editing!==undefined&&<Modal title={editing?'Editar autor':'Nuevo autor'} onClose={()=>setEditing(undefined)}><AuthorForm author={editing??undefined} onSaved={()=>{setEditing(undefined);void load();}} onCancel={()=>setEditing(undefined)}/></Modal>}
+ </>;
 }
+
